@@ -12,6 +12,7 @@ import (
 	"sync"
 
 	"github.com/gocolly/colly"
+	"github.com/gosuri/uiprogress"
 )
 
 func getImageURLs(threadURL string) []string {
@@ -30,7 +31,7 @@ func getImageURLs(threadURL string) []string {
 	return links
 }
 
-func downloadFile(filepath string, url string, wg *sync.WaitGroup) error {
+func downloadFile(filepath string, url string, wg *sync.WaitGroup, pgbar *uiprogress.Bar) error {
 	out, err := os.Create(filepath)
 	if err != nil {
 		return err
@@ -49,6 +50,8 @@ func downloadFile(filepath string, url string, wg *sync.WaitGroup) error {
 	}
 
 	defer wg.Done()
+
+	pgbar.Incr()
 
 	return nil
 }
@@ -87,14 +90,19 @@ func main() {
 		}
 	}
 
+	uiprogress.Start()
+	bar := uiprogress.AddBar(len(images)).AppendCompleted()
+	bar.PrependFunc(func(b *uiprogress.Bar) string {
+		return fmt.Sprintf("%d/%d", b.Current(), len(images))
+	})
 	var wg sync.WaitGroup
 	wg.Add(len(images))
 	for _, url := range images {
 		filename := fmt.Sprintf(`%s`, path.Base(url))
 		filePath := fmt.Sprintf(`%s\%s`, dlPath, filename)
-		go downloadFile(filePath, url, &wg)
+		go downloadFile(filePath, url, &wg, bar)
 	}
-	fmt.Printf("Downloading %d images...\n", len(images))
 	wg.Wait()
+	uiprogress.Stop()
 	fmt.Printf("Downloaded %d images to %s\n", len(images), dlPath)
 }
