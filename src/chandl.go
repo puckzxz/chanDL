@@ -91,8 +91,8 @@ func main() {
 	}
 
 	uiprogress.Start()
-	bar := uiprogress.AddBar(len(images)).AppendCompleted()
-	bar.PrependFunc(func(b *uiprogress.Bar) string {
+	bar := uiprogress.AddBar(len(images)).PrependElapsed()
+	bar.AppendFunc(func(b *uiprogress.Bar) string {
 		return fmt.Sprintf("%d/%d", b.Current(), len(images))
 	})
 	var wg sync.WaitGroup
