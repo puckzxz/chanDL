@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gocolly/colly"
 	"github.com/gosuri/uiprogress"
@@ -83,6 +84,10 @@ func (t *Thread) Download() {
 			defer file.Close()
 			// Get the data from our URL
 			resp, err := http.Get(url)
+			for resp.StatusCode != 200 {
+				time.Sleep(time.Millisecond * 250)
+				resp, err = http.Get(url)
+			}
 			if err != nil {
 				return err
 			}
@@ -92,8 +97,8 @@ func (t *Thread) Download() {
 			if err != nil {
 				return err
 			}
-			defer wg.Done()
 			pgbar.Incr()
+			defer wg.Done()
 			return nil
 		}(image, fileName, &wg, bar)
 	}
